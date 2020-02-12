@@ -1,0 +1,152 @@
+Option Explicit
+
+ 
+Public Sub Run_myQuery_all()
+ 
+ ' working code for pass excel value to acess query
+ 'Declaring the necessary variables.
+    Dim yearName As String
+    Dim monthname As String
+    Dim accessApp As Object
+    Dim con         As Object
+    Dim Rs          As Object
+    Dim AccessFile  As String
+    Dim strTable    As String
+    Dim strQuery    As String
+  
+    Dim i           As Integer
+    Dim payor As String
+    Dim paraofpayor As String
+     
+     'pick payor,year and month from excel
+         
+     yearName = Cells(2, 4).Value
+     monthname = Cells(2, 2).Value
+     payor = ThisWorkbook.Worksheets("Sheet1").Cells(2, 1).Value
+     ' create a folder\Task\Month
+     MkDir "I:\working folder\Task\Month end automation\" & yearName & "_" & monthname
+     
+    
+     
+     
+     'MsgBox para_payor(payor)
+     paraofpayor = para_payor(payor)
+     'MsgBox paraofpayor
+     'disable the alert
+     Application.DisplayAlerts = False
+     
+     
+    'Disable screen flickering.
+    Application.ScreenUpdating = False
+    
+    'Specify the file path of the accdb file. You can also use the full path of the file like:
+    
+    AccessFile = "I:\working folder\Task\Month end automation\" & "Month-End All Payor Data.accdb"
+    
+    'Set the name of the query you want to run adn retrieve the data.
+     'Set the name of the table you want to retrieve the data.
+    strTable = "Month-End All Payor Data"
+    
+    On Error Resume Next
+     
+ 
+    'Create the ADODB connection object.
+    Set con = CreateObject("ADODB.connection")
+    'Check if the object was created.
+    If Err.Number <> 0 Then
+        MsgBox "Connection was not created!", vbCritical, "Connection Error"
+        Exit Sub
+    End If
+    On Error GoTo 0
+    
+'Open the connection.
+    con.Open "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & AccessFile
+    
+    
+      
+    'Create the SQL statement to retrieve the data from table.
+    'Get the necessary information (first name etc.) for all the Canadian customers.
+    
+     strQuery = "SELECT * FROM [Month-End All Payor Data] where [inv payor]='" & paraofpayor & "';"
+    
+   
+
+
+    'MsgBox strQuery
+    'MsgBox strQuery_test
+    
+    On Error Resume Next
+    'Create the ADODB recordset object.
+    Set Rs = CreateObject("ADODB.Recordset")
+    'Check if the object was created.
+    If Err.Number <> 0 Then
+        'Error! Release the objects and exit.
+        Set Rs = Nothing
+        Set con = Nothing
+        'Display an error message to the user.
+        MsgBox "Recordset was not created!", vbCritical, "Recordset Error"
+        Exit Sub
+    End If
+    On Error GoTo 0
+    
+    
+    'Set thee cursor location.
+    Rs.CursorLocation = 3 'adUseClient on early  binding
+    Rs.CursorType = 1 'adOpenKeyset on early  binding
+    
+    'Open the recordset.
+    Rs.Open strQuery, con
+    
+    'Check if the recordet is empty.
+    If Rs.EOF And Rs.BOF Then
+        'Close the recordet and the connection.
+        Rs.Close
+        con.Close
+        'Release the objects.
+        Set Rs = Nothing
+        Set con = Nothing
+        'Enable the screen.
+        Application.ScreenUpdating = True
+        'In case of an empty recordset display an error.
+        MsgBox "There are no records in the recordset!", vbCritical, "No Records"
+        Exit Sub
+    End If
+    
+    'Copy the recordset headers.
+    'For i = 0 To rs.Fields.Count - 1
+        'Sheets("data").Cells(1, i + 1) = rs.Fields(i).Name
+    'Next i
+    
+    'Write the query values in the sheet.
+    
+    'open MOM template
+     
+     Workbooks.Open Filename:="I:\working folder\Task\Month end automation\" & "MOM_Template 2019 Vol 2.xlsb"
+     
+     Sheets("data").Range("A2").CopyFromRecordset Rs
+    'save the xlsb as required name
+    ActiveWorkbook.SaveAs "I:\working folder\Task\Month end automation\" & yearName & "_" & monthname & "\" & payor & "destination.xlsb", FileFormat:=50
+    'Close the recordet and the connection.
+    Rs.Close
+    con.Close
+    ActiveWorkbook.Close
+    'Release the objects.
+    Set Rs = Nothing
+    Set con = Nothing
+    Application.DisplayAlerts = False
+    'Adjust the columns' width.
+    'Columns("A:B").AutoFit
+    
+    'Enable the screen.
+    'Application.ScreenUpdating = False
+
+    'Inform the user that the macro was executed successfully.
+    'MsgBox "All data were  successfully retrieved from the '" & strQuery & "' query!", vbInformation, "Done"
+    
+End Sub
+
+ Function para_payor(payor As String) As String
+para_payor = payor
+End Function
+
+
